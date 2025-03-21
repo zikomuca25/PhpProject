@@ -3,7 +3,8 @@
     <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
-
+        <script type="module" src="app.js"></script>
+        <script type="module" src="bootstrap.js"></script>
         <title>Laravel</title>
 
         <!-- Fonts -->

@@ -2,47 +2,76 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Contracts\Auth\CanResetPassword;
+use Illuminate\Auth\Passwords\CanResetPassword as CanResetPasswordTrait;
 
-class User extends Authenticatable
+class User extends Authenticatable implements CanResetPassword
 {
-    /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasFactory, Notifiable;
+    use HasFactory, Notifiable, CanResetPasswordTrait;
 
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var list<string>
-     */
+    public $timestamps = true; // (created_at, updated_at)
+
+    
     protected $fillable = [
-        'name',
-        'email',
-        'password',
+        'username',  
+        'email',     
+        'password',  
+        'role',     
+        'reset_token', 
     ];
 
-    /**
-     * The attributes that should be hidden for serialization.
-     *
-     * @var list<string>
-     */
+    public function employee()
+    {
+        return $this->hasOne(Employee::class, 'user_id');
+    }
+    public function admin()
+    {
+        return $this->hasOne(Admin::class, 'user_id');
+    }
     protected $hidden = [
         'password',
         'remember_token',
+        'reset_token', 
     ];
 
     /**
-     * Get the attributes that should be cast.
-     *
-     * @return array<string, string>
+     * Cast attributes.
      */
-    protected function casts(): array
+    protected $casts = [
+        'password' => 'hashed', 
+        'created_at' => 'datetime',
+    ];
+
+    //for debug
+    public static function boot()
     {
-        return [
-            'email_verified_at' => 'datetime',
-            'password' => 'hashed',
-        ];
+        parent::boot();
+
+        static::creating(function ($user) {
+            dump("Before user creation:", $user->toArray()); // Dump user data before creation
+        });
+
+        static::created(function ($user) {
+            dump("User created successfully!", $user->toArray()); // Dump user data after creation
+        });
     }
+   
+    public function generateResetToken()
+    {
+        $token = \Illuminate\Support\Str::random(60);
+        $this->reset_token = bcrypt($token); // Hash token for security
+        $this->save();
+        return $token;
+    }
+
+    
+    public function verifyResetToken($token)
+    {
+        return \Illuminate\Support\Facades\Hash::check($token, $this->reset_token);
+    }
+
+
 }
